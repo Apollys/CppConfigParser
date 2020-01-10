@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 
+const char ConfigParser::kDeclarationTerminationChar = ';';
 const std::string ConfigParser::kCommentPrefix = "#";
 
 const std::string ConfigParser::kStringTypeString = "string";
@@ -80,76 +81,76 @@ bool IsCommentStart(const std::string& input_string, size_t start_index) {
     return input_string.substr(start_index, len) == ConfigParser::kCommentPrefix;
 }
 
-// Breaks input into lines, removes comments, and trims whitespace
-std::vector<std::string> StripWhitespaceAndComments(const std::ifstream& input_filestream) {
+std::string RemoveComments(const std::string& input_string) {
+    bool in_comment = false;
+    bool in_quotes = false;
+    std::string output_string;
+    for (size_t i = 0; i < input_string.size(); ++i) {
+        const char ch = input_string[i];
+        if (in_comment) {  // skip commented out characters
+            if (ch == '\n') in_comment = false;
+            continue;
+        } else if (in_quotes) {  // copy in-quotes characters directly
+            if (ch == '"') in_quotes = false;
+            output_string += ch;
+        } else if (IsCommentStart(input_string, i)) {  // start comment
+            in_comment = true;
+        } else if (ch == '"') {  // start quotes
+            in_quotes = true;
+            output_string += ch;  // copy quote character as well (unlike comment)
+        } else {                  // any non-special case, copy character to output
+            output_string += ch;
+        }
+    }
+    return output_string;
+}
+
+// Converts any sequence of consecutive whitespace into a single space (only if outside quotes)
+// Should be called after comments are removed, since comment parsing is whitespace dependent
+std::string CleanWhitespace(const std::string& input_string) {
+    bool in_quotes = false;
+    bool in_whitespace = false;
+    std::string output_string;
+    for (const char ch : input_string) {
+        if (in_quotes) {  // copy in-quotes characters directly
+            if (ch == '"') in_quotes = false;
+            output_string += ch;
+        } else if (in_whitespace) {  // when in whitespace, only check for end of whitespace
+            if (!ConfigParser::is_space(ch)) {  // end whitespace
+                in_whitespace = false;
+                output_string += ch;
+            }
+        } else if (ConfigParser::is_space(ch)) {  // start whitespace
+            in_whitespace = true;
+            output_string += ' ';
+        } else {  // any non-special case, copy character to output
+            output_string += ch;
+        }
+    }
+    return output_string;
+}
+
+/* Preprocessing to clean up and normalize the input:
+ *  - Removes comments (starting from comment prefix, up to newline char)
+ *  - Cleans up any whitespace (turning blocks of whitespace into a single space)
+ *  - Splits into a list of declarations (by splitting at semicolons)
+ *  - Trims whitespace (from left and right ends) of each declaration
+ */
+std::vector<std::string> PreprocessInput(const std::ifstream& input_filestream) {
     // Read file stream into input string stream and get string
     std::stringstream ss;
     ss << input_filestream.rdbuf();
     std::string input_string = ss.str();
-    // Break into a vector of lines
-    std::vector<std::string> lines = SplitString(input_string, '\n');
-    // Remove comments (this must be done before trimming whitespace)
-    // Note: we must be careful to not falsely detect comments that are inside quotes
-    for (std::string& line : lines) {
-        bool in_quotes = false;
-        for (size_t i = 0; i < line.size(); ++i) {
-            if (line[i] == '"') {
-                in_quotes = !in_quotes;
-            } else if (!in_quotes && IsCommentStart(line, i)) {
-                line.erase(i);  // remove all characters starting at position i from this line
-                break;          // move on to next line
-            }
-        }
-    }
-    // Trim whitespace
-    for (std::string& line : lines) {
-        Trim(line);
-    }
+    // Clean up formatting
+    std::string cleaned_input = CleanWhitespace(RemoveComments(input_string));
+    // Break into lines and trim excess whitespace
+    std::vector<std::string> declarations =
+            SplitString(cleaned_input, ConfigParser::kDeclarationTerminationChar);
+    for (std::string& declaration : declarations) Trim(declaration);
     // Remove empty lines
-    lines.erase(std::remove(lines.begin(), lines.end(), ""), lines.end());
-    // DEBUG ONLY
-    //    std::cout << "****** StripWhitespaceAndComments ******" << std::endl;
-    //    for (const std::string& line : lines) std::cout << line << std::endl;
-    //    std::cout << "****************************************" << std::endl;
-    return lines;
-}
-
-// Assumes StripWhitespaceAndComments has already been called
-// Removes newlines inside of vector expressions, e.g. [1, 2,\n3] --> [1, 2, 3]
-std::vector<std::string> RemoveNewlinesInVectorExpressions(
-        const std::vector<std::string>& stripped_lines) {
-    std::vector<std::string> output_lines;
-    bool in_vector = false;
-    bool in_quotes = false;
-    std::string output_line = "";
-    for (const std::string& input_line : stripped_lines) {
-        output_line += input_line;
-        for (const char ch : input_line) {
-            if (ch == '"') {
-                in_quotes = !in_quotes;
-            } else if (!in_quotes && !in_vector && (ch == '[')) {
-                in_vector = true;
-            } else if (!in_quotes && in_vector && (ch == ']')) {
-                in_vector = false;
-            }
-        }
-        // After going through the line, if we are not in a vector, place line into output_lines
-        // If we are in a vector, continue to the next line without resetting state
-        if (!in_vector) {
-            output_lines.push_back(std::move(output_line));
-            output_line = "";
-        } else {
-            output_line += " ";  // replace newline with a single space
-        }
-    }
-    if (output_line != "") {
-        output_lines.push_back(std::move(output_line));
-    }
-    // DEBUG ONLY
-    //    std::cout << "******* RemoveNewlinesInVectors ********" << std::endl;
-    //    for (const std::string& line : output_lines) std::cout << line << std::endl;
-    //    std::cout << "****************************************" << std::endl;
-    return output_lines;
+    declarations.erase(std::remove(declarations.begin(), declarations.end(), ""),
+                       declarations.end());
+    return declarations;
 }
 
 // Advances the current_index until it points to a character for which delimeter_predicate
@@ -455,22 +456,10 @@ ConfigParser::ConfigParser(const std::string& config_path)
         _error_messages.emplace_back("Error opening file: " + config_path);
         return;
     }
-    const std::vector<std::string> stripped_lines = StripWhitespaceAndComments(input_filestream);
-    const std::vector<std::string> input_lines = RemoveNewlinesInVectorExpressions(stripped_lines);
-    for (const std::string& line : input_lines) {
+    const std::vector<std::string> declarations = PreprocessInput(input_filestream);
+    for (const std::string& line : declarations) {
         ++_line_number;
-        // Skip blank line
-        // No longer necessary, blank lines already stripped
-        //        if (std::all_of(line.begin(), line.end(), ConfigParser::is_space)) {
-        //            continue;
-        //        }
         size_t current_index = 0;
-        SkipWhitespace(line, &current_index);
-        // Check for comment prefix as first non-whitespace characters of the line
-        // No longer necessary, comments already stripped
-        //        if (CommentStart(line, current_index)) {
-        //            continue;
-        //        }
         std::string type_string, name_string, equals_string, expression_string;
         bool is_vector;
         // Read type
@@ -529,10 +518,10 @@ ConfigParser::ConfigParser(const std::string& config_path)
                             type_string + (is_vector ? "[]" : ""));
             return;
         }
-        // We should now be at the end of the line (whitespace and comments already trimmed)
+        // We should now be at the end of the declaration
         if (current_index < line.size()) {
-            AddErrorMessage(std::string("expected end of line at \"") + line.substr(current_index) +
-                            "\"");
+            AddErrorMessage(std::string("expected ") + kDeclarationTerminationChar + " at \"" +
+                            line.substr(current_index) + "\"");
             return;
         }
         _var_map[name_string] = Variable{type_string, is_vector, expression_string};

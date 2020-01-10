@@ -48,6 +48,8 @@ enum class ExpressionType {
 
 class ConfigParser {
   public:
+    // Syntax constants
+    static const char kDeclarationTerminationChar;
     static const std::string kCommentPrefix;
     // Type names
     static const std::string kStringTypeString;
