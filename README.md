@@ -6,24 +6,25 @@ Supports variables of types `string`, `int`, `float`, `double`, and `bool`, and 
 
 ### Format
 
-The `#` character indicates the start of a comment that continues to the end of the line.
+The `#` character indicates the start of a **comment** that continues to the end of the line.
 
-After comment removal, the config file is a newline-separated set of **declaration**s.
+Aside from comments, the config file is a `;`-separated set of **declaration**s.
 
 A **declaration** has the form `<type> <variable-name> = <expression>`.
  - `<type>` is one of the supported types listed above, optionally followed by `[]` to declare a vector of values.
- - `<variable-name>` is a name consisting of non-whitespace characters.
- - `<expression>` is either a single-value expression or a vector expression, depending on the presence of `[]` suffixing the type.
-   - A single-value expression has the form `"my_string"` for strings, `true` or `false` for bools, or a numeric literal for the numeric types.
-   - A vector expression has the form `[<value_1>, <value_2>, ..., <value_n>]` where each of the `<value_i>` expressions are a single-value
- expression of the corresponding type, and the whitespace after the commas may contain newlines for cleaner formatting if desired.
- 
+ - `<variable-name>` is a sequence of any characters except whitespace or quotes.
+ - `<expression>` is either a **single-value expression** or a **vector expression**, depending on the presence of `[]` suffixing the type.
+   - A **single-value expression** has the form `"my_string"` for strings, `true` or `false` for bools, or a numeric literal for the numeric types.
+   - A **vector expression** has the form `[<value_1>, <value_2>, ..., <value_n>]` where each of the `<value_i>` expressions is a single-value expression of the corresponding type.
+
+Note: except for comments, this format is whitespace agnostic: any consecutive sequence of whitespace characters is equivalent to any other. This means that newlines and indents may be inserted in the place of a space anywhere in the declarations to format the config file more clearly.
+
  ### Example
  
  ```python
  # This is a sample config file
- string message = "Hello Universe"
- int[] perfect_numbers = [6, 28, 496]
+ string message = "Hello Universe";
+ int[] perfect_numbers = [6, 28, 496];
  ```
  
  This file could be used in C++ as follows:
