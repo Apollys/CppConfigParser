@@ -643,11 +643,7 @@ size_t ConfigParser::ErrorCount() const {
 }
 
 std::string ConfigParser::ErrorString() const {
-    std::string error_string;
-    for (const std::string& error_message : _error_messages) {
-        error_string += error_message + "\n";
-    }
-    return error_string.substr(0, error_string.size() - 1);  // remove trailing newline
+    return _error_messages.size() ? _error_messages[0] : std::string("");
 }
 
 void ConfigParser::PrintVariableMap() const {
