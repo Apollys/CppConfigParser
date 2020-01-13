@@ -29,6 +29,7 @@ int main() {
     std::cout << "doubles: " << config_parser.GetDoubleVector("doubles") << std::endl;
     std::cout << "bools: " << config_parser.GetBoolVector("bools") << std::endl;
     std::cout << "empty_vector: " << config_parser.GetDoubleVector("empty_vector") << std::endl;
+    std::cout << "infinities: " << config_parser.GetFloatVector("infinities") << std::endl;
     std::cout << std::endl;
     
     // Check for errors
