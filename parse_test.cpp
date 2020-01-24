@@ -16,12 +16,13 @@ int main() {
     }
     config_parser.PrintVariableMap();
     std::cout << std::endl;
-    
+
     // Get and print values
-    std::cout << "height: " << config_parser.GetFloatValue("height") << std::endl;
-    std::cout << "length: " << config_parser.GetIntValue("length") << std::endl;
-    std::cout << "x: " << config_parser.GetDoubleValue("x") << std::endl;
-    std::cout << "test_bool: " << config_parser.GetBoolValue("test_bool") << std::endl;
+    std::cout << "height: " << config_parser.GetFloat("height") << std::endl;
+    std::cout << "length: " << config_parser.GetInt("length") << std::endl;
+    std::cout << "size: " << config_parser.GetUint("size") << std::endl;
+    std::cout << "x: " << config_parser.GetDouble("x") << std::endl;
+    std::cout << "test_bool: " << config_parser.GetBool("test_bool") << std::endl;
     // Get and print vectors
     std::cout << "words: " << config_parser.GetStringVector("words") << std::endl;
     std::cout << "primes: " << config_parser.GetIntVector("primes") << std::endl;
@@ -31,7 +32,7 @@ int main() {
     std::cout << "empty_vector: " << config_parser.GetDoubleVector("empty_vector") << std::endl;
     std::cout << "infinities: " << config_parser.GetFloatVector("infinities") << std::endl;
     std::cout << std::endl;
-    
+
     // Check for errors
     if (config_parser.ErrorCount()) {
         std::cout << config_parser.ErrorString() << std::endl;
@@ -40,4 +41,3 @@ int main() {
     std::cout << "Completed, no errors" << std::endl;
     return 0;
 }
-    

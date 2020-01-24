@@ -2,7 +2,7 @@
 
 A lightwieght C++ config system for quick algorithm development and testing
 
-Supports variables of types `string`, `int`, `float`, `double`, and `bool`, and vectors of each of those types.
+Supports variables of types `string`, `int`, `uint`, `float`, `double`, and `bool`, and vectors of each of those types.
 
 ### Format
 

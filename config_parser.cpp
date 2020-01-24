@@ -11,16 +11,23 @@ const std::string ConfigParser::kCommentPrefix = "#";
 
 const std::string ConfigParser::kStringTypeString = "string";
 const std::string ConfigParser::kIntTypeString = "int";
+const std::string ConfigParser::kUintTypeString = "uint";
 const std::string ConfigParser::kFloatTypeString = "float";
 const std::string ConfigParser::kDoubleTypeString = "double";
 const std::string ConfigParser::kBoolTypeString = "bool";
 
-const std::vector<std::string> ConfigParser::kValidTypeStrings = std::vector<std::string>{
-        kStringTypeString, kIntTypeString, kFloatTypeString, kDoubleTypeString, kBoolTypeString};
+const std::vector<std::string> ConfigParser::kValidTypeStrings =
+        std::vector<std::string>{kStringTypeString,
+                                 kIntTypeString,
+                                 kUintTypeString,
+                                 kFloatTypeString,
+                                 kDoubleTypeString,
+                                 kBoolTypeString};
 
 const std::unordered_map<std::string, ExpressionType> ConfigParser::kTypeStringMap{
         {ConfigParser::kStringTypeString, ExpressionType::kString},
         {ConfigParser::kIntTypeString, ExpressionType::kInt},
+        {ConfigParser::kUintTypeString, ExpressionType::kUint},
         {ConfigParser::kFloatTypeString, ExpressionType::kFloat},
         {ConfigParser::kDoubleTypeString, ExpressionType::kDouble},
         {ConfigParser::kBoolTypeString, ExpressionType::kBool}};
@@ -201,6 +208,16 @@ int ParseInt(const std::string& value_string, bool* error_flag) {
     }
 }
 
+size_t ParseUint(const std::string& value_string, bool* error_flag) {
+    *error_flag = false;
+    try {
+        return std::stoull(value_string);
+    } catch (...) {
+        *error_flag = true;
+        return 0;
+    }
+}
+
 float ParseFloat(const std::string& value_string, bool* error_flag) {
     *error_flag = false;
     try {
@@ -244,7 +261,7 @@ std::vector<std::string> ParseStringVector(const std::string& expression_string,
     // Split into individual values' expressions
     std::vector<std::string> value_strings =
             SplitVectorExpression(expression_string, type_string, error_flag);
-    if (*error_flag) return std::vector<std::string>{};
+    if (*error_flag) return {};
     // Parse each value
     std::vector<std::string> parsed_values;
     for (const std::string& value_string : value_strings) {
@@ -259,9 +276,24 @@ std::vector<int> ParseIntVector(const std::string& expression_string, bool* erro
     // Split into individual values' expressions
     std::vector<std::string> value_strings =
             SplitVectorExpression(expression_string, type_string, error_flag);
-    if (*error_flag) return std::vector<int>{};
+    if (*error_flag) return {};
     // Parse each value
     std::vector<int> parsed_values;
+    for (const std::string& value_string : value_strings) {
+        parsed_values.push_back(ParseInt(value_string, error_flag));
+        if (*error_flag) break;  // break whenever error occurs to preserve error_flag value
+    }
+    return parsed_values;
+}
+
+std::vector<size_t> ParseUintVector(const std::string& expression_string, bool* error_flag) {
+    static const std::string type_string = ConfigParser::kUintTypeString;
+    // Split into individual values' expressions
+    std::vector<std::string> value_strings =
+            SplitVectorExpression(expression_string, type_string, error_flag);
+    if (*error_flag) return {};
+    // Parse each value
+    std::vector<size_t> parsed_values;
     for (const std::string& value_string : value_strings) {
         parsed_values.push_back(ParseInt(value_string, error_flag));
         if (*error_flag) break;  // break whenever error occurs to preserve error_flag value
@@ -274,7 +306,7 @@ std::vector<float> ParseFloatVector(const std::string& expression_string, bool* 
     // Split into individual values' expressions
     std::vector<std::string> value_strings =
             SplitVectorExpression(expression_string, type_string, error_flag);
-    if (*error_flag) return std::vector<float>{};
+    if (*error_flag) return {};
     // Parse each value
     std::vector<float> parsed_values;
     for (const std::string& value_string : value_strings) {
@@ -289,7 +321,7 @@ std::vector<double> ParseDoubleVector(const std::string& expression_string, bool
     // Split into individual values' expressions
     std::vector<std::string> value_strings =
             SplitVectorExpression(expression_string, type_string, error_flag);
-    if (*error_flag) return std::vector<double>{};
+    if (*error_flag) return {};
     // Parse each value
     std::vector<double> parsed_values;
     for (const std::string& value_string : value_strings) {
@@ -304,7 +336,7 @@ std::vector<bool> ParseBoolVector(const std::string& expression_string, bool* er
     // Split into individual values' expressions
     std::vector<std::string> value_strings =
             SplitVectorExpression(expression_string, type_string, error_flag);
-    if (*error_flag) return std::vector<bool>{};
+    if (*error_flag) return {};
     // Parse each value
     std::vector<bool> parsed_values;
     for (const std::string& value_string : value_strings) {
@@ -395,6 +427,10 @@ bool CheckParseValue(const std::string& value_string, const std::string& type_st
             ParseInt(value_string, &error_flag);
             break;
         }
+        case ExpressionType::kUint: {
+            ParseUint(value_string, &error_flag);
+            break;
+        }
         case ExpressionType::kFloat: {
             ParseFloat(value_string, &error_flag);
             break;
@@ -421,6 +457,10 @@ bool CheckParseVector(const std::string& vector_string, const std::string& type_
         }
         case ExpressionType::kInt: {
             ParseIntVector(vector_string, &error_flag);
+            break;
+        }
+        case ExpressionType::kUint: {
+            ParseUintVector(vector_string, &error_flag);
             break;
         }
         case ExpressionType::kFloat: {
@@ -528,7 +568,7 @@ ConfigParser::ConfigParser(const std::string& config_path)
     }
 }
 
-std::string ConfigParser::GetStringValue(const std::string& variable_name) {
+std::string ConfigParser::GetString(const std::string& variable_name) {
     static const std::string expected_type_string = kStringTypeString;
     static const bool expected_is_vector = false;
     if (!CheckVariableExists(variable_name, expected_type_string, expected_is_vector)) {
@@ -539,7 +579,7 @@ std::string ConfigParser::GetStringValue(const std::string& variable_name) {
     return ParseString(expression_string, &error_flag_unusued);
 }
 
-int ConfigParser::GetIntValue(const std::string& variable_name) {
+int ConfigParser::GetInt(const std::string& variable_name) {
     static const std::string expected_type_string = kIntTypeString;
     static const bool expected_is_vector = false;
     if (!CheckVariableExists(variable_name, expected_type_string, expected_is_vector)) {
@@ -550,7 +590,18 @@ int ConfigParser::GetIntValue(const std::string& variable_name) {
     return ParseInt(expression_string, &error_flag_unusued);
 }
 
-float ConfigParser::GetFloatValue(const std::string& variable_name) {
+int ConfigParser::GetUint(const std::string& variable_name) {
+    static const std::string expected_type_string = kUintTypeString;
+    static const bool expected_is_vector = false;
+    if (!CheckVariableExists(variable_name, expected_type_string, expected_is_vector)) {
+        return {};
+    }
+    const std::string expression_string = _var_map[variable_name].expression_string;
+    bool error_flag_unusued;  // parse check already done
+    return ParseUint(expression_string, &error_flag_unusued);
+}
+
+float ConfigParser::GetFloat(const std::string& variable_name) {
     static const std::string expected_type_string = kFloatTypeString;
     static const bool expected_is_vector = false;
     if (!CheckVariableExists(variable_name, expected_type_string, expected_is_vector)) {
@@ -561,7 +612,7 @@ float ConfigParser::GetFloatValue(const std::string& variable_name) {
     return ParseFloat(expression_string, &error_flag_unusued);
 }
 
-double ConfigParser::GetDoubleValue(const std::string& variable_name) {
+double ConfigParser::GetDouble(const std::string& variable_name) {
     static const std::string expected_type_string = kDoubleTypeString;
     static const bool expected_is_vector = false;
     if (!CheckVariableExists(variable_name, expected_type_string, expected_is_vector)) {
@@ -572,7 +623,7 @@ double ConfigParser::GetDoubleValue(const std::string& variable_name) {
     return ParseDouble(expression_string, &error_flag_unusued);
 }
 
-bool ConfigParser::GetBoolValue(const std::string& variable_name) {
+bool ConfigParser::GetBool(const std::string& variable_name) {
     static const std::string expected_type_string = kBoolTypeString;
     static const bool expected_is_vector = false;
     if (!CheckVariableExists(variable_name, expected_type_string, expected_is_vector)) {
@@ -603,6 +654,17 @@ std::vector<int> ConfigParser::GetIntVector(const std::string& variable_name) {
     const std::string expression_string = _var_map[variable_name].expression_string;
     bool error_flag_unusued;  // parse check already done
     return ParseIntVector(expression_string, &error_flag_unusued);
+}
+
+std::vector<size_t> ConfigParser::GetUintVector(const std::string& variable_name) {
+    static const std::string expected_type_string = kUintTypeString;
+    static const bool expected_is_vector = true;
+    if (!CheckVariableExists(variable_name, expected_type_string, expected_is_vector)) {
+        return {};
+    }
+    const std::string expression_string = _var_map[variable_name].expression_string;
+    bool error_flag_unusued;  // parse check already done
+    return ParseUintVector(expression_string, &error_flag_unusued);
 }
 
 std::vector<float> ConfigParser::GetFloatVector(const std::string& variable_name) {

@@ -6,7 +6,7 @@
  *   - Each line has whitespace/comments only, or a variable declaration
  *   - A single-valued variable declaration has the format:
  *     <typename> <variable_name> = <value>
- *     where valid typenames are string, int, float, douable, bool.
+ *     where valid typenames are string, int, uint, float, douable, bool.
  *     Values of type string are enclosed in ""s, and bool values are true/false.
  *   - A std::vector variable declaration has the format:
  *     <typename>[] <variable_name> = [<value_0>, <optional_newline><value_1>, ...]
@@ -41,6 +41,7 @@ struct Variable {
 enum class ExpressionType {
     kString,
     kInt,
+    kUint,
     kFloat,
     kDouble,
     kBool,
@@ -54,6 +55,7 @@ class ConfigParser {
     // Type names
     static const std::string kStringTypeString;
     static const std::string kIntTypeString;
+    static const std::string kUintTypeString;
     static const std::string kFloatTypeString;
     static const std::string kDoubleTypeString;
     static const std::string kBoolTypeString;
@@ -72,14 +74,16 @@ class ConfigParser {
     // Note: getters are not `const` because they may add error messages
 
     // Single value getters
-    std::string GetStringValue(const std::string& variable_name);
-    int GetIntValue(const std::string& variable_name);
-    float GetFloatValue(const std::string& variable_name);
-    double GetDoubleValue(const std::string& variable_name);
-    bool GetBoolValue(const std::string& variable_name);
+    std::string GetString(const std::string& variable_name);
+    int GetInt(const std::string& variable_name);
+    int GetUint(const std::string& variable_name);
+    float GetFloat(const std::string& variable_name);
+    double GetDouble(const std::string& variable_name);
+    bool GetBool(const std::string& variable_name);
     // Vector getters
     std::vector<std::string> GetStringVector(const std::string& variable_name);
     std::vector<int> GetIntVector(const std::string& variable_name);
+    std::vector<size_t> GetUintVector(const std::string& variable_name);
     std::vector<float> GetFloatVector(const std::string& variable_name);
     std::vector<double> GetDoubleVector(const std::string& variable_name);
     std::vector<bool> GetBoolVector(const std::string& variable_name);
