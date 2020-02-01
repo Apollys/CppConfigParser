@@ -590,7 +590,7 @@ int ConfigParser::GetInt(const std::string& variable_name) {
     return ParseInt(expression_string, &error_flag_unusued);
 }
 
-int ConfigParser::GetUint(const std::string& variable_name) {
+size_t ConfigParser::GetUint(const std::string& variable_name) {
     static const std::string expected_type_string = kUintTypeString;
     static const bool expected_is_vector = false;
     if (!CheckVariableExists(variable_name, expected_type_string, expected_is_vector)) {

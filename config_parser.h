@@ -76,7 +76,7 @@ class ConfigParser {
     // Single value getters
     std::string GetString(const std::string& variable_name);
     int GetInt(const std::string& variable_name);
-    int GetUint(const std::string& variable_name);
+    size_t GetUint(const std::string& variable_name);
     float GetFloat(const std::string& variable_name);
     double GetDouble(const std::string& variable_name);
     bool GetBool(const std::string& variable_name);
